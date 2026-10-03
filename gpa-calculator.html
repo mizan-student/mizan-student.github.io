@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>حاسبة المعدل التراكمي GPA</title>
+<meta name="description" content="احسب معدلك الفصلي والتراكمي بسرعة. تدعم سلم 4.0 وسلم 5.0.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eef3f6; --card:#ffffff; --ink:#14213d; --muted:#5b6b82; --line:#d5dee8;
+  --accent:#1f6f8b; --accent-ink:#ffffff; --warn:#b4432f; --hero:#14213d; --hero-ink:#ffffff; --hero-sub:#aebbd0;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1623; --card:#16212f; --ink:#e8eef6; --muted:#93a3b9; --line:#27364a;
+    --accent:#4fb0cf; --accent-ink:#06202b; --warn:#ff8a73; --hero:#1b2a3f; --hero-ink:#ffffff; --hero-sub:#93a3b9;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1623; --card:#16212f; --ink:#e8eef6; --muted:#93a3b9; --line:#27364a;
+  --accent:#4fb0cf; --accent-ink:#06202b; --warn:#ff8a73; --hero:#1b2a3f; --hero-ink:#ffffff; --hero-sub:#93a3b9;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",Arial,sans-serif;line-height:1.7}
+main{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.6rem;margin:8px 0 4px}
+.lead{color:var(--muted);margin:0 0 20px}
+.result{background:var(--hero);color:var(--hero-ink);border-radius:14px;padding:20px 22px;display:grid;grid-template-columns:1fr 1fr;gap:12px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:2}
+.result .n{font-size:2.6rem;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.result .l{color:var(--hero-sub);font-size:.9rem}
+.result .sub{grid-column:1/-1;color:var(--hero-sub);font-size:.85rem;border-top:1px solid rgba(255,255,255,.15);padding-top:8px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:16px}
+.panel h2{font-size:1.05rem;margin:0 0 12px}
+label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
+input,select,button{font:inherit;color:var(--ink)}
+input,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:44px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.scale{display:flex;flex-wrap:wrap;gap:8px}
+.scale button{flex:1 1 auto;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 12px;min-height:44px;cursor:pointer}
+.scale button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.course{display:grid;grid-template-columns:2fr 1fr 1.3fr 44px;gap:8px;align-items:end;margin-bottom:10px}
+.course .del{min-height:44px;border:1px solid var(--line);background:transparent;border-radius:8px;cursor:pointer;color:var(--warn);font-size:1.1rem}
+.heads{display:grid;grid-template-columns:2fr 1fr 1.3fr 44px;gap:8px;font-size:.8rem;color:var(--muted);margin-bottom:6px}
+.add{margin-top:6px;width:100%;min-height:46px;border:1.5px dashed var(--accent);background:transparent;color:var(--accent);border-radius:10px;cursor:pointer;font-weight:500}
+.reset{margin-top:12px;background:none;border:none;color:var(--muted);text-decoration:underline;cursor:pointer;min-height:44px}
+.msg{color:var(--warn);font-size:.85rem;min-height:1.2em;margin:8px 0 0}
+.note{color:var(--muted);font-size:.85rem;margin-top:20px}
+@media (max-width:520px){
+  .heads{display:none}
+  .course{grid-template-columns:1fr 1fr 44px}
+  .course .name{grid-column:1/-1}
+  .result .n{font-size:2.1rem}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>حاسبة المعدل التراكمي (GPA)</h1>
+  <p class="lead">أدخل موادك وعلاماتك، وبيطلع لك المعدل الفصلي والتراكمي مباشرة.</p>
+
+  <section class="result" aria-live="polite">
+    <div><div class="n" id="sem">0.00</div><div class="l">المعدل الفصلي</div></div>
+    <div><div class="n" id="cum">0.00</div><div class="l">المعدل التراكمي</div></div>
+    <div class="sub" id="sub">أضف ساعات المواد لتبدأ الحساب.</div>
+  </section>
+
+  <section class="panel">
+    <h2>سلم العلامات</h2>
+    <div class="scale" id="scales" role="group" aria-label="سلم العلامات"></div>
+  </section>
+
+  <section class="panel">
+    <h2>مواد هذا الفصل</h2>
+    <div class="heads"><span>اسم المادة (اختياري)</span><span>الساعات</span><span>العلامة</span><span></span></div>
+    <div id="courses"></div>
+    <button class="add" id="add" type="button">إضافة مادة</button>
+    <p class="msg" id="msg"></p>
+  </section>
+
+  <section class="panel">
+    <h2>الفصول السابقة (اختياري)</h2>
+    <div class="row2">
+      <div><label for="pgpa">المعدل السابق</label><input id="pgpa" type="number" inputmode="decimal" step="0.01" min="0" placeholder="مثال: 3.20"></div>
+      <div><label for="phrs">الساعات المنجزة سابقاً</label><input id="phrs" type="number" inputmode="numeric" step="1" min="0" placeholder="مثال: 45"></div>
+    </div>
+  </section>
+
+  <button class="reset" id="reset" type="button">مسح كل البيانات</button>
+  <p class="note">النتيجة تقريبية. تأكد من سلم العلامات المعتمد في جامعتك، فبعض الجامعات تستخدم قيماً مختلفة.</p>
+</main>
+
+<script>
+(function(){
+  var SCALES = {
+    "4.0 (مع + و -)": {max:4, g:{"A+":4,"A":4,"A-":3.67,"B+":3.33,"B":3,"B-":2.67,"C+":2.33,"C":2,"C-":1.67,"D+":1.33,"D":1,"F":0}},
+    "4.0 (بسيط)":     {max:4, g:{"A":4,"B":3,"C":2,"D":1,"F":0}},
+    "5.0":            {max:5, g:{"A+":5,"A":4.75,"B+":4.5,"B":4,"C+":3.5,"C":3,"D+":2.5,"D":2,"F":1}}
+  };
+  var names = Object.keys(SCALES), scale = names[0], rows = [];
+  var $ = function(id){return document.getElementById(id)};
+  var uid = 0;
+
+  function newRow(){ rows.push({id:++uid, name:"", hrs:"3", grade:""}); }
+  function esc(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
+
+  function drawScales(){
+    var el = $("scales"); el.innerHTML = "";
+    names.forEach(function(n){
+      var b = document.createElement("button"); b.type = "button"; b.textContent = n;
+      b.setAttribute("aria-pressed", n === scale ? "true" : "false");
+      b.onclick = function(){
+        scale = n;
+        rows.forEach(function(r){ if(!(r.grade in SCALES[scale].g)) r.grade = ""; });
+        drawScales(); drawRows(); calc();
+      };
+      el.appendChild(b);
+    });
+  }
+
+  function drawRows(){
+    var box = $("courses"), g = SCALES[scale].g, html = "";
+    rows.forEach(function(r, i){
+      var opts = '<option value="">اختر</option>' + Object.keys(g).map(function(k){
+        return '<option value="'+k+'"'+(r.grade===k?' selected':'')+'>'+k+' ('+g[k]+')</option>';
+      }).join("");
+      html += '<div class="course" data-id="'+r.id+'">' +
+        '<div class="name"><label for="n'+r.id+'">المادة '+(i+1)+'</label><input id="n'+r.id+'" data-f="name" value="'+esc(r.name)+'" placeholder="مثال: فيزياء 2"></div>' +
+        '<div><label for="h'+r.id+'">الساعات</label><input id="h'+r.id+'" data-f="hrs" type="number" inputmode="decimal" min="0" step="0.5" value="'+esc(r.hrs)+'"></div>' +
+        '<div><label for="g'+r.id+'">العلامة</label><select id="g'+r.id+'" data-f="grade">'+opts+'</select></div>' +
+        '<button class="del" type="button" aria-label="حذف المادة '+(i+1)+'">✕</button></div>';
+    });
+    box.innerHTML = html;
+  }
+
+  function calc(){
+    var g = SCALES[scale].g, pts = 0, hrs = 0, bad = false;
+    rows.forEach(function(r){
+      var h = parseFloat(r.hrs);
+      if(r.grade in g && h > 0){ pts += g[r.grade]*h; hrs += h; }
+      else if(r.grade in g && !(h > 0)) bad = true;
+    });
+    var sem = hrs ? pts/hrs : 0;
+    var pg = parseFloat($("pgpa").value), ph = parseFloat($("phrs").value);
+    var hasPrev = pg >= 0 && ph > 0;
+    var cum = sem, tot = hrs;
+    if(hasPrev){ tot = hrs + ph; cum = (pts + pg*ph)/tot; }
+    else if(!hrs) cum = 0;
+    $("sem").textContent = sem.toFixed(2);
+    $("cum").textContent = cum.toFixed(2);
+    $("sub").textContent = hrs
+      ? "مجموع ساعات الفصل: " + hrs + (hasPrev ? " | مجموع الساعات الكلي: " + tot : "") + " | من " + SCALES[scale].max.toFixed(1)
+      : "اختر العلامة وأدخل الساعات لكل مادة.";
+    var m = "";
+    if(bad) m = "أدخل عدد ساعات أكبر من صفر للمواد التي حددت لها علامة.";
+    else if(hasPrev && pg > SCALES[scale].max) m = "المعدل السابق أعلى من الحد الأقصى للسلم المختار.";
+    $("msg").textContent = m;
+  }
+
+  $("courses").addEventListener("input", function(e){
+    var f = e.target.getAttribute("data-f"); if(!f) return;
+    var id = +e.target.closest(".course").getAttribute("data-id");
+    rows.forEach(function(r){ if(r.id === id) r[f] = e.target.value; });
+    calc();
+  });
+  $("courses").addEventListener("click", function(e){
+    if(!e.target.classList.contains("del")) return;
+    var id = +e.target.closest(".course").getAttribute("data-id");
+    rows = rows.filter(function(r){return r.id !== id});
+    if(!rows.length) newRow();
+    drawRows(); calc();
+  });
+  $("add").onclick = function(){ newRow(); drawRows(); calc(); var l = $("courses").querySelector(".course:last-child input"); if(l) l.focus(); };
+  $("reset").onclick = function(){ rows = []; newRow(); newRow(); newRow(); $("pgpa").value = ""; $("phrs").value = ""; drawRows(); calc(); };
+  $("pgpa").addEventListener("input", calc);
+  $("phrs").addEventListener("input", calc);
+
+  newRow(); newRow(); newRow();
+  drawScales(); drawRows(); calc();
+})();
+</script>
+</body>
+</html>
